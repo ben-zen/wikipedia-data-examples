@@ -12,7 +12,7 @@ parameters = {'action' : 'query',
               'format' : 'json',
               'continue' : ''}
 
-# run a white true loop
+# run a while true loop
 while True:
     wp_call = requests.get('https://en.wikipedia.org/w/api.php', params=parameters)
     response = wp_call.json()
@@ -30,4 +30,27 @@ while True:
         parameters.update(response['continue'])
     else:
         break
-            
+
+# We've found another interesting point: there's plenty of anonymous editors;
+# how many are there? Let's build a set and see how big it is.
+
+anon_editors = set()
+while True:
+    wp_call = requests.get('https://en.wikipedia.org/w/api.php', params=parameters)
+    response = wp_call.json()
+    for page_id in response["query"]["pages"].keys():
+        revisions = response['query']['pages'][page_id]['revisions']
+        for rev in revisions:
+            if 'anon' in rev.keys():
+                anon_editors.add(rev['user'])
+
+    if 'continue' in response:
+        parameters.update(response['continue'])
+        # Replaces what was in parameters['continue'] with what's in response['continue']
+    else:
+        break
+
+anon_file = open('anon_editors_python.txt', 'wt')
+for anon in anon_editors:
+    anon_file.write(anon + '\n')
+anon_file.close()
